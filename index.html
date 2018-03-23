@@ -1,0 +1,488 @@
+<html lang="en">
+
+<head>
+    <title>Machine Learning Tutorial on Samsung ARTIK Cloud</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="https://developer.artik.cloud/assets/images/tools/favicon.ico?v=ac">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script>
+        // Settings
+
+        var lockDeviceId = "";
+        var lockDeviceToken = "";
+
+        // Main functions
+
+        function lock() {
+            var now = new Date();
+            postLockMessage(now.valueOf(), "locked");
+        }
+
+        function unlock() {
+            var now = new Date();
+            postLockMessage(now.valueOf(), "unlocked");
+        }
+
+        function generateLockMessages() {
+            var oneMonthAgo = new Date();
+            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+            oneMonthAgo.setHours(0, 0, 0);
+            oneMonthAgo.setMilliseconds(0);
+
+            var now = new Date();
+            // for every day between one month ago and now:
+            for (
+                var currentDate = oneMonthAgo;
+                currentDate <= now;
+                currentDate.setDate(currentDate.getDate() + 1)
+            ) {
+                var dayOfTheWeekIndex = currentDate.getDay();
+
+                // assuming the door is always locked, skip week-ends
+                if (dayOfTheWeekIndex == 0 || dayOfTheWeekIndex == 6) {
+                    continue;
+                }
+
+                // unlocked event happens between 08h50 and 09h05
+                var unlockedEventMorningDate = new Date(currentDate.valueOf());
+                unlockedEventMorningDate.setHours(8);
+                unlockedEventMorningDate.setMinutes(50);
+                unlockedEventMorningTs =
+                    unlockedEventMorningDate.valueOf() +
+                    getRandomNumberBetweenRange(0, 15) * 60 * 1000;
+                postLockMessage(unlockedEventMorningTs, "unlocked");
+
+                // next, locked event happens between 09h10 and 09h15
+                var lockedEventMorningDate = new Date(currentDate.valueOf());
+                lockedEventMorningDate.setHours(9);
+                lockedEventMorningDate.setMinutes(10);
+                lockedEventMorningTs =
+                    lockedEventMorningDate.valueOf() +
+                    getRandomNumberBetweenRange(0, 5) * 60 * 1000;
+                postLockMessage(lockedEventMorningTs, "locked");
+
+                // unlocked event happens between 17h50 and 18h05
+                var unlockedEventEveningDate = new Date(currentDate.valueOf());
+                unlockedEventEveningDate.setHours(17);
+                unlockedEventEveningDate.setMinutes(50);
+                unlockedEventEveningTs =
+                    unlockedEventEveningDate.valueOf() +
+                    getRandomNumberBetweenRange(0, 15) * 60 * 1000;
+                postLockMessage(unlockedEventEveningTs, "unlocked");
+
+                // next, locked event happens between 19h10 and 19h15
+                var lockedEventEveningDate = new Date(currentDate.valueOf());
+                lockedEventEveningDate.setHours(19);
+                lockedEventEveningDate.setMinutes(10);
+                lockedEventEveningTs =
+                    lockedEventEveningDate.valueOf() +
+                    getRandomNumberBetweenRange(0, 5) * 60 * 1000;
+                postLockMessage(lockedEventEveningTs, "locked");
+            }
+        }
+
+        // Helpers
+
+        function postLockMessage(ts, state) {
+            var date = new Date(ts);
+            console.log(date + " " + state);
+            akcPostMessage(lockDeviceToken, lockDeviceId, ts, { state: state });
+        }
+
+        function getRandomNumberBetweenRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        // ARTIK Cloud API
+
+        function akcPostMessage(apiToken, deviceId, timestamp, messageData) {
+            var data = JSON.stringify({
+                data: messageData,
+                sdid: deviceId,
+                ts: timestamp,
+                type: "message"
+            });
+            var xhr = new XMLHttpRequest();
+            xhr.addEventListener("readystatechange", function () {
+                if (this.readyState === 4) {
+                    console.log(this.responseText);
+                }
+            });
+            xhr.open("POST", "https://api.artik.cloud/v1.1/messages");
+            xhr.setRequestHeader("Authorization", "Bearer " + apiToken);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(data);
+        }
+
+
+    </script>
+</head>
+
+<body>
+    <br>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-2">
+                <!-- Nav pills -->
+                <ul class="nav nav-pills flex-column" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="pill" href="#home">Introduction</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="pill" href="#menu1">Setup a lock device</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="pill" href="#menu2">Feed it with 1 month's past data</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="pill" href="#menu3">Setup a rule to detect an anomaly</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="pill" href="#menu4">Send regular data and cause an anomaly</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="pill" href="#menu5">Conclusion</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-xl-10">
+                <div class="tab-content">
+                    <div id="home" class="container tab-pane active">
+                        <h3>Introduction</h3>
+                        <p>The goal of this tutorial is to illustrate the
+                            <a href="https://developer.artik.cloud/documentation/tutorials/how-to/use-machine-learning-rule.html">Machine Learning</a> capability of
+                            <a href="https://artik.cloud">Samsung ARTIK Cloud</a>, the anomaly detection.</p>
+                        <h4>Reminders</h4>
+                        <p>
+                            ARTIK Cloud is the Samsung's Internet Of Things (IoT) Cloud Platform. On this platform, a device is a virtual representation
+                            of a physical device, a "thing". A device sends data messages to, and receives actions from the
+                            cloud. The data messages are composed of fields and are associated with a timestamp. A field
+                            reflects a device's physical attribute (e.g. a Z-Wave Lock has a field state, that can be "locked"
+                            or "unlocked" at any time). You can set up rules that define conditions (on received messages)
+                            and outcomes (action on devices, send an e-mail, perform a web request), provided the conditions
+                            are met.
+                        </p>
+                        <h4>Description</h4>
+                        <p>In concert with the Rules, the anomaly detection enables you to monitor data sent by your IoT devices
+                            and act accordingly (e.g. send an e-mail alert) when receiving abnormal data (e.g. intruder detected).
+                            It focuses on a device's particular field.</p>
+                        <h4>Scenario</h4>
+                        <p>To begin with, we create a device on your ARTIK Cloud account to represent your smart home's lock.
+                            Then, assuming that your have a regular timetable (you leave home around 9 AM and work until
+                            6 PM. After that, you do some gardening before dinner at 7 PM, and - to simplify - you stay at
+                            home during all the week-end), we provision 1 month of data (generated with a random variation)
+                            to this device. Next, we set up a rule to detect an anomaly (oversight, intrusion) on the data
+                            reported by your smart lock and warn you by e-mail. On the one hand, we send a regular data to
+                            check if the rule is not triggered. On the other hand, we send an abnormal data to check if the
+                            rule is actually triggered.
+                        </p>
+                    </div>
+                    <div id="menu1" class="container tab-pane fade">
+                        <h3>Setup a lock device</h3>
+                        
+                            <h5> First Create Device Type</h5>
+                            <p> Here's our documentation on <a href="https://developer.artik.cloud/documentation/tools/web-tools.html#creating-a-device-type">Creating Device Type</a>. We won't follow these instructions exactly so keep the following points in mind<p>
+
+                            <ol>
+                                <li><b>Create a Device Type</b> with any name you like.  I'm choosing here "Sample Virtual Lock" as the name</a></li>
+                                <li>Keep device type setting "private" (default)
+                                <li>Upload the virtual-lock-manifest.json on the setup manifest screen</li>
+                            </ol>
+
+                            <h5> Next add device (of above Device Type) to your account</h5>
+                            <ol>
+                                
+                                <li>Log into your
+                                    <a href="https://my.artik.cloud">ARTIK Cloud account</a>
+                                </li>
+                                <li>
+                                    Add a <a href="https://my.artik.cloud/devices/new/">Sample Virtual Lock</a> you just created
+                                </li>
+                                <li>Name device as you wish (e.g. "My Door Tutorial")</li>
+                                <li>Generate its Device Token</li>
+                                <ul>
+                                    <li>Open your
+                                        <a href="https://my.artik.cloud/devices">devices list</a>
+                                    </li>
+                                    <li>Click on "My Door Tutorial" lock name</li>
+                                    <li>Click on "Generate Device Token"</li>
+                                </ul>
+                                <li>Copy/Paste the Device ID and the Device Token here below</li>
+                                <li>Press the Save button</li>
+                            </ol>
+                        </p>
+                        <form>
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">Device ID</label>
+                                <input type="text" class="form-control" id="deviceId" aria-describedby="deviceIdHelp" placeholder="paste your device ID"> </div>
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">Device Token</label>
+                                <input type="text" class="form-control" id="deviceToken" aria-describedby="deviceTokenHelp" placeholder="paste your device Token"> </div>
+                            <button id="saveBtn" class="btn btn-primary">Save</button>
+                        </form>
+                    </div>
+                    <div id="menu2" class="container tab-pane fade">
+                        <h3>Feed it with 1 month's past data</h3>
+                        <ol>
+                            <li>Open the
+                                <a href="https://my.artik.cloud/datalogs">Data Logs</a>
+                            </li>
+                            <li>In the "Show messages by device" setting list, select your lock</li>
+                            <li>Press the "Generate data" button here below, to send 1 month of data that respects your regular
+                                timetable
+                            </li>
+                            <li>Wait a few seconds</li>
+                            <li>You can see that the messages (from 1 month ago to yesterday) arrived on ARTIK Cloud. If necessary,
+                                refresh the web page.</li>
+                            <li>You can also have a look at the
+                                <a href="https://my.artik.cloud/charts">charts</a>
+                            </li>
+                            <ul>
+                                <li>Click on the +/- CHARTS button</li>
+                                <li>Select your lock's "state" field</li>
+                                <li>Click on the "1m" (1 month) button</li>
+                                <li>You can see that the data are quite uniform</li>
+                            </ul>
+                        </ol>
+                        <div class="card">
+                            <div class="card-header">
+                                Dynamic data generation
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">Training data</h5>
+                                <p class="card-text">
+                                    The messages will be generated for the following time points:
+                                    <ul>
+                                        <li>unlocked events: between 08:50 AM and 09:05 AM</li>
+                                        <li>locked events: between 09:10 AM and 09:15 AM</li>
+                                        <li>unlocked events: between 5:50 PM and 6:05 PM</li>
+                                        <li>locked events: between 7:10 PM and 7:15 PM</li>
+                                    </ul>
+                                    <button id="generateOneMonthDataBtn" class="btn btn-primary">Generate data</button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="menu3" class="container tab-pane fade">
+                        <h3>Setup a rule to detect an anomaly</h3>
+                        <ol>
+                            <li>Open the
+                                <a href="https://my.artik.cloud/rules">rules</a>
+                            </li>
+                            <li>Click on "+ NEW RULE"</li>
+                            <li>In the IF settings (condition's first operand), select your lock name</li>
+                            <li>Select the "state" field</li>
+                            <li>In "equal to" settings (condition's operator), select "an unexpected value"</li>
+                            <li>Set the "Confidence Level" as "HIGH"</li>
+                            <li>In the THEN settings (consequence's action), select "Send Email" and :</li>
+                            <ul>
+                                    <li>Enter your own e-mail on the "TO" parameter</li>
+                                    <li>Enter "Anomaly detected" on the "SUBJECT" parameter</li>
+                                    <li>Enter "Anomaly detected" the "BODY" parameters</li>
+                            </ul>
+                        </ol>
+                        <div class="alert alert-info">
+                                You could also inject the current lock's state using the injection button.
+                                In real life, you may send an action to lock or unlock the door.
+                        </div>
+                        <div class="alert alert-warning">
+                                Before going to the next step, you will have to wait until the learning (indicated in the rule) is completed.
+                                It should take a few minutes.
+                        </div>
+                              
+                    </div>
+                    <div id="menu4" class="container tab-pane fade">
+                        <h3>Send regular data and cause an anomaly</h3>
+                        <h4>Your lock states (and indeterminate states)</h4>
+                        <table class="table table-bordered">
+                            <tbody>
+                                <tr>
+                                    <th class="text-right">state</th>
+                                    <td class="text-center">
+                                        <font color="00a0dc">
+                                            <i class="fa fa-lock"></i>
+                                            <br>locked</font>
+                                    </td>
+                                    <td class="text-center">
+                                        <i class="fa fa-question-circle"></i>
+                                        <br>unknown
+                                    </td>
+                                    <td class="text-center">
+                                        <font color="e86d13">
+                                            <i class="fa fa-unlock"></i>
+                                            <br>unlocked</font>
+                                    </td class="text-center">
+                                    <td class="text-center">
+                                        <i class="fa fa-question-circle"></i>
+                                        <br>unknown
+                                    </td>
+                                    <td class="text-center">
+                                        <font color="00a0dc">
+                                            <i class="fa fa-lock"></i>
+                                            <br>locked</font>
+                                    </td>
+                                    <td class="text-center">
+                                        <i class="fa fa-question-circle"></i>
+                                        <br>unknown
+
+                                    </td>
+                                    <td class="text-center">
+                                        <font color="e86d13">
+                                            <i class="fa fa-unlock"></i>
+                                            <br>unlocked</font>
+                                    </td>
+                                    <td class="text-center">
+                                        <i class="fa fa-question-circle"></i>
+                                        <br>unknown
+                                    </td>
+                                    <td class="text-center">
+                                        <font color="00a0dc">
+                                            <i class="fa fa-lock"></i>
+                                            <br>locked</font>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="text-right">time slot</th>
+                                    <td class="text-center">
+                                        00:00 AM - 08:50 AM
+                                    </td>
+                                    <td class="text-center">
+                                        08:50 AM - 09:05 AM
+                                    </td>
+                                    <td class="text-center">
+                                        09:05 AM - 09:09 AM
+                                    </td>
+                                    <td class="text-center">
+                                        09:10 AM - 09:15 AM
+                                    </td>
+                                    <td class="text-center">
+                                        09:15 AM - 05:50 PM
+                                    </td>
+                                    <td class="text-center">
+                                        05:50 PM - 06h05 PM
+                                    </td>
+                                    <td class="text-center">
+                                        06:05 PM - 07h10 PM
+                                    </td>
+                                    <td class="text-center">
+                                        07:10 PM - 07:15 PM
+                                    </td>
+                                    <td>
+                                        07:15 PM - 12:00 PM
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <i class="fa fa-question-circle"></i> unknown: means that the lock could be locked or unlocked.
+                        <br/>
+                        <br/>
+                        <h4>Send regular data</h4>
+                        <ol>
+                            <li>Press the "Lock the door" or "Unlock the door" button here below, to send 1 message that respects
+                                your timetable usual properties
+                            </li>
+                            <li>You should not receive any e-mail</li>
+                            <li>On the
+                                <a href="https://my.artik.cloud/rules">rules</a>, when expanding the rule you have just created before, you should see that it has
+                                been never triggered (RUN 0 times)</li>
+                        </ol>
+                        <h4>Cause an anomaly</h4>
+                        <ol>
+                            <li>Press the "Lock the door" or "Unlock the door" button here below, to send 1 message that should
+                                cause an anomaly according to your timetable
+                            </li>
+                            <li>You should receive an alert e-mail</li>
+                            <li>On the
+                                <a href="https://my.artik.cloud/rules">rules</a>, your rule should have been triggered once (RUN 1 times)</li>
+                        </ol>
+
+                        <div class="card">
+                            <div class="card-header">
+                                Data generation
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">Usual properties</h5>
+                                <p class="card-text">
+                                    <ul>
+                                        <li>the door is unlocked from 6 PM to 7 PM on workweek</li>
+                                        <li>the door is locked otherwise</li>
+                                    </ul>
+                                </p>
+                                <h5 class="card-title">Potential anomalies</h5>
+                                <p class="card-text">
+                                    <ul>
+                                        <li>the door is unlocked during night, morning (00:00 AM - 08:50 AM), work time (09:15
+                                            AM - 5:50 PM) or week-end.
+                                        </li>
+                                        <li>the door is locked during gardening time (6:05 - 7:10 PM)</li>
+                                    </ul>
+                                    <button id="lockDoor" class="btn btn-primary">Lock the door</button>
+                                    <button id="unlockDoor" class="btn btn-primary">Unlock the door</button>
+                                </p>
+                            </div>
+                        </div>
+                        <br/>
+                    </div>
+                    <div id="menu5" class="container tab-pane fade">
+                        <h3>Conclusion</h3>
+                        <p>
+                                You created a device on ARTIK Cloud. You feed it with regular data. You setup a rule based on Machine Learning to detect
+                                an anomaly. You sent a sample of regular data again. Nothing happened. You sent an abnormal data
+                                sample. You received an alert e-mail. Your rule was triggered. Now you know how to leverage this
+                                powerful feature of Samsung ARTIK Cloud. You can delete the Z-Wave lock device from your account
+                                if you need.
+                        </p>
+                        <div class="alert alert-danger" role="alert">
+                            The Machine Learning's model training is based on a 30 days sliding time window. The anomaly detection will work for today only.
+                            On a real case, the device should keep sending data regularly. Also, sending non relevant data could corrupt the model training.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function deviceIdOrTokenEmpty() {
+            var res = (!lockDeviceId) || (!lockDeviceToken);
+            if (res) {
+                window.alert('WARNING: device ID and Token are not both set!');
+            }
+            return res;
+        }
+
+
+        $('#saveBtn').on('click', function (e) {
+            lockDeviceId = document.getElementById("deviceId").value;
+            lockDeviceToken = document.getElementById("deviceToken").value;
+            if (!deviceIdOrTokenEmpty()) {
+                window.alert('device ID and Token succesfully saved');
+            }
+            e.preventDefault();
+        })
+        $('#generateOneMonthDataBtn').on('click', function (e) {
+            if (!deviceIdOrTokenEmpty()) {
+                generateLockMessages();
+            }
+            e.preventDefault();
+        })
+        $('#lockDoor').on('click', function (e) {
+            if (!deviceIdOrTokenEmpty()) {
+                lock();
+            }
+            e.preventDefault();
+        })
+        $('#unlockDoor').on('click', function (e) {
+            if (!deviceIdOrTokenEmpty()) {
+                unlock();
+            }
+            e.preventDefault();
+        })
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,21 @@
+{
+  "fields": [
+    {
+      "name": "state",
+      "type": "STATE",
+      "valueClass": "String",
+      "isCollection": false,
+      "tags": [],
+      "metaData": [
+        {
+          "type": "VALUES_STRING",
+          "value": [
+            "locked",
+            "unlocked"
+          ]
+        }
+      ]
+    }
+  ],
+  "messageFormat": "json"
+}
