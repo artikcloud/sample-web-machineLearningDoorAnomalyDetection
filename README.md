@@ -4,7 +4,7 @@ This is an interactive web sample to detect smart lock anomalies using the ARTIK
 
 ##### **Prerequisites**
 
-* You should be familar with ARTIK cloud services: [Creating Device Types](https://developer.artik.cloud/documentation/getting-started/devices.html#create-a-device-type), adding devices to your account, retrieving the device ID and device token, and using Rules.
+* You should know how to perform the following tasks on ARTIK cloud services: [Creating Device Types](https://developer.artik.cloud/documentation/getting-started/devices.html#create-a-device-type), adding devices to your account, retrieving the device ID and device token, and using Rules.
 * We will use Python to run the built-in web container and run the sample locally on `http://localhost:8000`.   
 
 ### Setup / Installation
