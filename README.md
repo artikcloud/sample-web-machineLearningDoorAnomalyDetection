@@ -64,4 +64,4 @@ License and Copyright
 
 Licensed under the Apache License. See [LICENSE](LICENSE).
 
-Copyright (c) 2016 Samsung Electronics Co., Ltd.
+Copyright (c) 2018 Samsung Electronics Co., Ltd.
